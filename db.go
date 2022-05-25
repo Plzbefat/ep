@@ -60,7 +60,7 @@ func (c *Config) getSshProxyClient() (*ssh.Client, error) {
 	})
 }
 
-//deubg?代理:本地 redis
+//debug?代理:本地 redis
 func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, error) {
 	if c.isDebug {
 		return c.GetProxyRedisClient(link, password, db)
@@ -69,7 +69,7 @@ func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, e
 	}
 }
 
-//deubg?代理:本地 mysql
+//debug?代理:本地 mysql
 func (c *Config) GetMysqlClient(link, password, db string) (*gorm.DB, error) {
 	if c.isDebug {
 		return c.GetProxyMysqlClient(link, password, db)
