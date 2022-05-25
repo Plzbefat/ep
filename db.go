@@ -104,7 +104,7 @@ func (c *Config) GetProxyMysqlClient(link, password, db string) (*gorm.DB, error
 	sqlDriver.RegisterDialContext("mysql_proxy_tcp", func(_ context.Context, addr string) (conn net.Conn, e error) {
 		return sshProxyConn.Dial("tcp", link)
 	})
-	mysqlProxyConn, _err := sql.Open("mysql", fmt.Sprintf("root:%s@mysql_proxy_tcp()/%s?charset=utf8mb4&parseTime=True&loc=Local", password, db))
+	mysqlProxyConn, _err := sql.Open("mysql", fmt.Sprintf("root:%s@mysql_proxy_tcp(127.0.0.1)/%s?charset=utf8mb4&parseTime=True&loc=Local", password, db))
 	if _err != nil {
 		panic(_err)
 	}
