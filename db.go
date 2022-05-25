@@ -104,7 +104,10 @@ func (c *Config) GetProxyMysqlClient(link, password, db string) (*gorm.DB, error
 	sqlDriver.RegisterDialContext("mysql_proxy_tcp", func(_ context.Context, addr string) (conn net.Conn, e error) {
 		return sshProxyConn.Dial("tcp", link)
 	})
-	mysqlProxyConn, _ := sql.Open("mysql", fmt.Sprintf("root:%s@mysql_proxy_tcp()/%s?charset=utf8mb4&parseTime=True&loc=Local", password, db))
+	mysqlProxyConn, _err := sql.Open("mysql", fmt.Sprintf("root:%s@mysql_proxy_tcp()/%s?charset=utf8mb4&parseTime=True&loc=Local", password, db))
+	if _err != nil {
+		panic(_err)
+	}
 
 	return gorm.Open(mysql.New(mysql.Config{Conn: mysqlProxyConn}), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}, Logger: logger.Default.LogMode(logger.Info)})
 }
@@ -116,6 +119,9 @@ func GetRedisClient(link, password string, db int) *redis.Client {
 
 //直接连接到mysql
 func GetMysqlClient(link, password, db string) *gorm.DB {
-	mysqlClient, _ := gorm.Open(mysql.Open(fmt.Sprintf("root:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", password, link, db)), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
+	mysqlClient, err := gorm.Open(mysql.Open(fmt.Sprintf("root:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", password, link, db)), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
+	if err != nil {
+		panic(err)
+	}
 	return mysqlClient
 }
