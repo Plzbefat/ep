@@ -21,13 +21,15 @@ import (
 type Config struct {
 	remoteServerAddress string
 	localKeyFilePath    string
+	isDebug             bool
 }
 
 //设置代理配置
-func NewProxy(remoteServerAddress, localKeyFilePath string) *Config {
+func NewProxy(remoteServerAddress, localKeyFilePath string, isDebug bool) *Config {
 	return &Config{
 		remoteServerAddress: remoteServerAddress,
 		localKeyFilePath:    localKeyFilePath,
+		isDebug:             isDebug,
 	}
 }
 
@@ -58,8 +60,26 @@ func (c *Config) getSshProxyClient() (*ssh.Client, error) {
 	})
 }
 
-//通过代理连接到redis
+//deubg?代理:本地 redis
 func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, error) {
+	if c.isDebug {
+		return c.GetProxyRedisClient(link, password, db)
+	} else {
+		return GetRedisClient(link, password, db), nil
+	}
+}
+
+//deubg?代理:本地 mysql
+func (c *Config) GetMysqlClient(link, password, db string) (*gorm.DB, error) {
+	if c.isDebug {
+		return c.GetProxyMysqlClient(link, password, db)
+	} else {
+		return GetMysqlClient(link, password, db), nil
+	}
+}
+
+//通过代理连接到redis
+func (c *Config) GetProxyRedisClient(link, password string, db int) (*redis.Client, error) {
 	sshProxyConn, err := c.getSshProxyClient()
 	if err != nil {
 		return nil, err
@@ -75,7 +95,7 @@ func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, e
 }
 
 //通过代理连接到mysql
-func (c *Config) GetMysqlClient(link, password, db string) (*gorm.DB, error) {
+func (c *Config) GetProxyMysqlClient(link, password, db string) (*gorm.DB, error) {
 	sshProxyConn, err := c.getSshProxyClient()
 	if err != nil {
 		return nil, err
