@@ -100,7 +100,7 @@ func (s *Search) getData() *Search {
 			}
 
 			if sqlWhere != "" {
-				sqlWhere += " and "
+				sqlWhere += " or "
 			}
 
 			//数值类的精准搜索
