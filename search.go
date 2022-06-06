@@ -22,6 +22,7 @@ type Search struct {
 	Limit     string
 
 	searchParams struct {
+		Key      string `json:"key" form:"key"` //开启模糊搜索 只要有这个字段就行
 		Precise  bool   `json:"precise" form:"precise"`
 		Current  int    `json:"current" form:"current"`
 		PageSize int    `json:"pageSize" form:"pageSize"`
@@ -70,64 +71,109 @@ func (s *Search) getData() *Search {
 
 	query := s.Database.Model(s.Data)
 
-	//模糊搜索字段
 	sqlWhere := ""
-	searchModelRef := reflect.ValueOf(s.ForSearch).Elem()
-	for i := 0; i < searchModelRef.NumField(); i++ {
-		var value string
 
-		fieldType := searchModelRef.Field(i).Type().String()
+	//全局模糊搜索
+	if s.searchParams.Key != "" {
+		//模糊搜索字段
+		searchModelRef := reflect.ValueOf(s.ForSearch).Elem()
+		for i := 0; i < searchModelRef.NumField(); i++ {
+			var value string
 
-		switch fieldType {
-		case "db.JsonDate":
-			value = searchModelRef.Field(i).Interface().(JsonDate).Str()
-		case "db.JsonDateTime":
-			value = searchModelRef.Field(i).Interface().(JsonDateTime).Str()
-		case "int":
-			value = strconv.Itoa(searchModelRef.Field(i).Interface().(int))
-			if value == "0" {
-				value = ""
+			fieldType := searchModelRef.Field(i).Type().String()
+
+			//只能是字符串类的做模糊搜索
+			switch fieldType {
+			case "string":
+				value = s.searchParams.Key
+			default:
+				continue
 			}
-		case "int64":
-			value = strconv.FormatInt(searchModelRef.Field(i).Interface().(int64), 10)
-			if value == "0" {
-				value = ""
+
+			if value == "" {
+				continue
 			}
-		case "float64":
-			value = strconv.Itoa(int(searchModelRef.Field(i).Float()))
-		case "string":
-			value = searchModelRef.Field(i).String()
-		}
 
-		if value == "" {
-			continue
-		}
+			key := searchModelRef.Type().Field(i).Tag.Get("form")
+			if key == "" {
+				continue
+			}
 
-		key := searchModelRef.Type().Field(i).Tag.Get("form")
-		if key == "" {
-			continue
-		}
+			if sqlWhere != "" {
+				sqlWhere += " and "
+			}
 
-		if sqlWhere != "" {
-			sqlWhere += " and "
-		}
-
-		//数值类的精准搜索
-		if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
-			sqlWhere += fmt.Sprintf(" %s = %s", key, value)
-		} else {
-			//字符串 手动控制 精准搜索
-			if s.searchParams.Precise {
-				sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
+			//数值类的精准搜索
+			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
+				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
-				sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
+				//字符串 手动控制 精准搜索
+				if s.searchParams.Precise {
+					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
+				} else {
+					sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
+				}
 			}
 		}
-	}
+	} else {
+		//模糊搜索字段
+		searchModelRef := reflect.ValueOf(s.ForSearch).Elem()
+		for i := 0; i < searchModelRef.NumField(); i++ {
+			var value string
 
-	//精准搜索 但是 sql 为空 那就不反馈数据
-	if s.searchParams.Precise && sqlWhere == "" {
-		return s
+			fieldType := searchModelRef.Field(i).Type().String()
+
+			switch fieldType {
+			case "db.JsonDate":
+				value = searchModelRef.Field(i).Interface().(JsonDate).Str()
+			case "db.JsonDateTime":
+				value = searchModelRef.Field(i).Interface().(JsonDateTime).Str()
+			case "int":
+				value = strconv.Itoa(searchModelRef.Field(i).Interface().(int))
+				if value == "0" {
+					value = ""
+				}
+			case "int64":
+				value = strconv.FormatInt(searchModelRef.Field(i).Interface().(int64), 10)
+				if value == "0" {
+					value = ""
+				}
+			case "float64":
+				value = strconv.Itoa(int(searchModelRef.Field(i).Float()))
+			case "string":
+				value = searchModelRef.Field(i).String()
+			}
+
+			if value == "" {
+				continue
+			}
+
+			key := searchModelRef.Type().Field(i).Tag.Get("form")
+			if key == "" {
+				continue
+			}
+
+			if sqlWhere != "" {
+				sqlWhere += " and "
+			}
+
+			//数值类的精准搜索
+			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
+				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
+			} else {
+				//字符串 手动控制 精准搜索
+				if s.searchParams.Precise {
+					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
+				} else {
+					sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
+				}
+			}
+		}
+
+		//精准搜索 但是 sql 为空 那就不反馈数据
+		if s.searchParams.Precise && sqlWhere == "" {
+			return s
+		}
 	}
 
 	query = query.Where(sqlWhere)
