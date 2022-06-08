@@ -142,6 +142,12 @@ func (s *Search) getData() *Search {
 				value = strconv.Itoa(int(searchModelRef.Field(i).Float()))
 			case "string":
 				value = searchModelRef.Field(i).String()
+			case "bool":
+				if searchModelRef.Field(i).Bool() {
+					value = "1"
+				} else {
+					value = "0"
+				}
 			}
 
 			if value == "" {
@@ -158,7 +164,7 @@ func (s *Search) getData() *Search {
 			}
 
 			//数值类的精准搜索
-			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
+			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" || fieldType == "bool" {
 				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
 				//字符串 手动控制 精准搜索
