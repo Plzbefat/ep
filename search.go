@@ -142,14 +142,6 @@ func (s *Search) getData() *Search {
 				value = strconv.Itoa(int(searchModelRef.Field(i).Float()))
 			case "string":
 				value = searchModelRef.Field(i).String()
-			case "bool":
-				if value != "" {
-					if searchModelRef.Field(i).Bool() {
-						value = "1"
-					} else {
-						value = "0"
-					}
-				}
 			}
 
 			if value == "" {
