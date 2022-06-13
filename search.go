@@ -143,13 +143,12 @@ func (s *Search) getData() *Search {
 			case "string":
 				value = searchModelRef.Field(i).String()
 			case "bool":
-				switch searchModelRef.Field(i).String() {
-				case "true":
-					value = "1"
-				case "false":
-					value = "0"
-				default:
-					value = ""
+				if value != "" {
+					if searchModelRef.Field(i).Bool() {
+						value = "1"
+					} else {
+						value = "0"
+					}
 				}
 			}
 
