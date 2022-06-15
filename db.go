@@ -63,23 +63,23 @@ func (c *Config) getSshProxyClient() (*ssh.Client, error) {
 //debug?代理:本地 redis
 func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, error) {
 	if c.isDebug {
-		return c.GetProxyRedisClient(link, password, db)
+		return c.getProxyRedisClient(link, password, db)
 	} else {
-		return GetRedisClient(link, password, db), nil
+		return getRedisClient(link, password, db), nil
 	}
 }
 
 //debug?代理:本地 mysql
 func (c *Config) GetMysqlClient(link, password, db string) (*gorm.DB, error) {
 	if c.isDebug {
-		return c.GetProxyMysqlClient(link, password, db)
+		return c.getProxyMysqlClient(link, password, db)
 	} else {
-		return GetMysqlClient(link, password, db), nil
+		return getMysqlClient(link, password, db), nil
 	}
 }
 
 //通过代理连接到redis
-func (c *Config) GetProxyRedisClient(link, password string, db int) (*redis.Client, error) {
+func (c *Config) getProxyRedisClient(link, password string, db int) (*redis.Client, error) {
 	sshProxyConn, err := c.getSshProxyClient()
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (c *Config) GetProxyRedisClient(link, password string, db int) (*redis.Clie
 }
 
 //通过代理连接到mysql
-func (c *Config) GetProxyMysqlClient(link, password, db string) (*gorm.DB, error) {
+func (c *Config) getProxyMysqlClient(link, password, db string) (*gorm.DB, error) {
 	sshProxyConn, err := c.getSshProxyClient()
 	if err != nil {
 		return nil, err
@@ -113,12 +113,12 @@ func (c *Config) GetProxyMysqlClient(link, password, db string) (*gorm.DB, error
 }
 
 //直接连接到redis
-func GetRedisClient(link, password string, db int) *redis.Client {
+func getRedisClient(link, password string, db int) *redis.Client {
 	return redis.NewClient(&redis.Options{Addr: link, Password: password, DB: db})
 }
 
 //直接连接到mysql
-func GetMysqlClient(link, password, db string) *gorm.DB {
+func getMysqlClient(link, password, db string) *gorm.DB {
 	mysqlClient, err := gorm.Open(mysql.Open(fmt.Sprintf("root:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", password, link, db)), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
 	if err != nil {
 		panic(err)
