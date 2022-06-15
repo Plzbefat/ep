@@ -3,23 +3,28 @@ package ep
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"reflect"
+	"strconv"
 )
 
-type Search struct {
-	//*db表
-	Database *gorm.DB
-	//*context
-	C *gin.Context
-	//*输出数据
-	Data interface{}
-	//*结构体地址 url 传入参数 必须带上 form 和 json 的tag!!!
-	ForSearch interface{}
-	Limit     string
+type search struct {
+	// db表
+	db *gorm.DB
+	// context
+	c *gin.Context
+	//搜索用表
+	model interface{}
+	//反馈数据
+	out interface{}
+	//总行数
+	total int64
+
+	error error
+
+	// sql 限制
+	sqlLimit string
 
 	searchParams struct {
 		Key      string `json:"key" form:"key"` //开启模糊搜索 只要有这个字段就行
@@ -31,19 +36,31 @@ type Search struct {
 		Stop     string `json:"stop" form:"stop"`
 		Offset   int    `json:"-" form:"-"`
 	}
+}
 
-	Total int64
-	Error error
+//Search 新的分页搜索
+func Search(c *gin.Context) *search {
+	return &search{c: c}
+}
+
+func (s *search) DB(db *gorm.DB) *search {
+	s.db = db
+	return s
+}
+
+func (s *search) Model(model interface{}) *search {
+	s.model = model
+	return s
 }
 
 //获取 分页排序日期 基础字段信息
-func (s *Search) getSearchParam() *Search {
-	if s.Database == nil {
-		s.Error = errors.New("database is empty")
+func (s *search) getSearchParam() *search {
+	if s.db == nil {
+		s.error = errors.New("database is empty")
 		return s
 	}
 
-	if s.Error = s.C.ShouldBindQuery(&s.searchParams); s.Error != nil {
+	if s.error = s.c.ShouldBindQuery(&s.searchParams); s.error != nil {
 		return s
 	}
 
@@ -59,24 +76,23 @@ func (s *Search) getSearchParam() *Search {
 		s.searchParams.Offset = s.searchParams.PageSize * off
 	}
 
-	s.Error = s.C.ShouldBindQuery(s.ForSearch)
+	s.error = s.c.ShouldBindQuery(s.model)
 	return s
 }
 
-//获取数据
-func (s *Search) getData() *Search {
-	if s.Error != nil {
+func (s *search) getData() *search {
+	if s.error != nil {
 		return s
 	}
 
-	query := s.Database.Model(s.Data)
+	query := s.db.Model(s.out)
 
 	sqlWhere := ""
 
 	//全局模糊搜索
 	if s.searchParams.Key != "" {
 		//模糊搜索字段
-		searchModelRef := reflect.ValueOf(s.ForSearch).Elem()
+		searchModelRef := reflect.ValueOf(s.model).Elem()
 		for i := 0; i < searchModelRef.NumField(); i++ {
 			var value string
 
@@ -117,7 +133,7 @@ func (s *Search) getData() *Search {
 		}
 	} else {
 		//模糊搜索字段
-		searchModelRef := reflect.ValueOf(s.ForSearch).Elem()
+		searchModelRef := reflect.ValueOf(s.model).Elem()
 		for i := 0; i < searchModelRef.NumField(); i++ {
 			var value string
 
@@ -179,7 +195,7 @@ func (s *Search) getData() *Search {
 	query = query.Where(sqlWhere)
 
 	//limit
-	query = query.Where(s.Limit)
+	query = query.Where(s.sqlLimit)
 
 	//date between
 	if s.searchParams.Start != "" && s.searchParams.Stop != "" {
@@ -187,14 +203,24 @@ func (s *Search) getData() *Search {
 	}
 
 	//统计查询总量
-	query.Count(&s.Total)
+	query.Count(&s.total)
 
 	//分页排序参数
 	offset, limit, order := s.searchParams.Offset, s.searchParams.PageSize, s.searchParams.Order
-	s.Error = query.Offset(offset).Limit(limit).Order(order).Scan(&s.Data).Error
+	s.error = query.Offset(offset).Limit(limit).Order(order).Scan(&s.out).Error
 	return s
 }
 
-func (s *Search) Exec() *Search {
+func (s *search) Scan(out interface{}) *search {
+	s.out = out
 	return s.getSearchParam().getData()
+}
+
+//Resp 反馈信息
+func (s *search) Resp() {
+	if s.error != nil {
+		RF(s.c, s.error.Error())
+	} else {
+		RT(s.c, "", gin.H{"data": s.out, "total": s.total})
+	}
 }
