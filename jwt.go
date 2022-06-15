@@ -23,8 +23,8 @@ func GetDetailByToken(detailName, token, tokenSecret string) string {
 	return claims[detailName].(string)
 }
 
-//GetContextUid 获取请求中的uid
-func GetContextUid(c *gin.Context, TokenSecret string) string {
+//GetUidByContext 获取请求中的uid
+func GetUidByContext(c *gin.Context, TokenSecret string) string {
 	token, _ := c.Cookie("token")
 	if token == "" {
 		return ""
