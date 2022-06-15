@@ -1,6 +1,7 @@
 package ep
 
 import "github.com/golang-jwt/jwt"
+import "github.com/gin-gonic/gin"
 
 //jwt 的token解析获取用户信息
 //detailName ：uid，lang
@@ -20,4 +21,20 @@ func GetDetailByToken(detailName, token, tokenSecret string) string {
 	claims, _ := _token.Claims.(jwt.MapClaims)
 
 	return claims[detailName].(string)
+}
+
+//GetContextUid 获取请求中的uid
+func GetContextUid(c *gin.Context, TokenSecret string) string {
+	token, _ := c.Cookie("token")
+	if token == "" {
+		return ""
+	}
+
+	//获取uid
+	uid := GetDetailByToken("uid", token, TokenSecret)
+	if uid == "" {
+		return ""
+	}
+
+	return uid
 }
