@@ -17,7 +17,7 @@ type search struct {
 	//搜索用表
 	model interface{}
 	//反馈数据
-	out interface{}
+	Out interface{}
 	//总行数
 	total int64
 
@@ -53,6 +53,11 @@ func (s *search) Model(model interface{}) *search {
 	return s
 }
 
+func (s *search) Limit(limit string) *search {
+	s.sqlLimit = limit
+	return s
+}
+
 //获取 分页排序日期 基础字段信息
 func (s *search) getSearchParam() *search {
 	if s.db == nil {
@@ -85,7 +90,7 @@ func (s *search) getData() *search {
 		return s
 	}
 
-	query := s.db.Model(s.out)
+	query := s.db.Model(s.Out)
 
 	sqlWhere := ""
 
@@ -207,12 +212,12 @@ func (s *search) getData() *search {
 
 	//分页排序参数
 	offset, limit, order := s.searchParams.Offset, s.searchParams.PageSize, s.searchParams.Order
-	s.error = query.Offset(offset).Limit(limit).Order(order).Scan(&s.out).Error
+	s.error = query.Offset(offset).Limit(limit).Order(order).Scan(&s.Out).Error
 	return s
 }
 
 func (s *search) Scan(out interface{}) *search {
-	s.out = out
+	s.Out = out
 	return s.getSearchParam().getData()
 }
 
@@ -221,6 +226,6 @@ func (s *search) Resp() {
 	if s.error != nil {
 		RF(s.c, s.error.Error())
 	} else {
-		RT(s.c, "", gin.H{"data": s.out, "total": s.total})
+		RT(s.c, "", gin.H{"data": s.Out, "total": s.total})
 	}
 }
