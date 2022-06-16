@@ -93,7 +93,7 @@ func (s *search) getData() *search {
 		return s
 	}
 
-	query := s.db.Model(s.Out)
+	query := s.db.Model(s.model)
 
 	sqlWhere := ""
 
