@@ -3,10 +3,11 @@ package ep
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"reflect"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type search struct {
@@ -24,7 +25,8 @@ type search struct {
 	error error
 
 	// sql 限制
-	sqlLimit string
+	sqlLimit     string
+	sqlLimitArgs interface{}
 
 	searchParams struct {
 		Key      string `json:"key" form:"key"` //开启模糊搜索 只要有这个字段就行
@@ -53,8 +55,9 @@ func (s *search) Model(model interface{}) *search {
 	return s
 }
 
-func (s *search) Limit(limit string) *search {
+func (s *search) Limit(limit string, sqlLimitArgs ...interface{}) *search {
 	s.sqlLimit = limit
+	s.sqlLimitArgs = sqlLimitArgs
 	return s
 }
 
@@ -200,7 +203,7 @@ func (s *search) getData() *search {
 	query = query.Where(sqlWhere)
 
 	//limit
-	query = query.Where(s.sqlLimit)
+	query = query.Where(s.sqlLimit, s.sqlLimitArgs)
 
 	//date between
 	if s.searchParams.Start != "" && s.searchParams.Stop != "" {
