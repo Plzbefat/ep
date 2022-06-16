@@ -203,7 +203,9 @@ func (s *search) getData() *search {
 	query = query.Where(sqlWhere)
 
 	//limit
-	query = query.Where(s.sqlLimit, s.sqlLimitArgs)
+	if s.sqlLimit != "" {
+		query = query.Where(s.sqlLimit, s.sqlLimitArgs)
+	}
 
 	//date between
 	if s.searchParams.Start != "" && s.searchParams.Stop != "" {
