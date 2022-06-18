@@ -17,6 +17,8 @@ type search struct {
 	c *gin.Context
 	//搜索用表
 	model interface{}
+	//表名
+	table string
 	//反馈数据
 	Out interface{}
 	//总行数
@@ -50,6 +52,10 @@ func (s *search) DB(db *gorm.DB) *search {
 	return s
 }
 
+func (s *search) Table(tableName string) *search {
+	s.table = tableName
+	return s
+}
 func (s *search) Model(model interface{}) *search {
 	s.model = model
 	return s
@@ -57,7 +63,9 @@ func (s *search) Model(model interface{}) *search {
 
 func (s *search) Limit(limit string, sqlLimitArgs ...interface{}) *search {
 	s.sqlLimit = limit
-	s.sqlLimitArgs = sqlLimitArgs
+	if len(sqlLimitArgs) > 0 {
+		s.sqlLimitArgs = sqlLimitArgs
+	}
 	return s
 }
 
@@ -93,7 +101,12 @@ func (s *search) getData() *search {
 		return s
 	}
 
-	query := s.db.Model(s.model)
+	var query *gorm.DB
+	if s.table != "" {
+		query = s.db.Table(s.table)
+	} else {
+		query = s.db.Model(s.model)
+	}
 
 	sqlWhere := ""
 
@@ -204,7 +217,11 @@ func (s *search) getData() *search {
 
 	//limit
 	if s.sqlLimit != "" {
-		query = query.Where(s.sqlLimit, s.sqlLimitArgs)
+		if s.sqlLimitArgs != nil {
+			query = query.Where(s.sqlLimit, s.sqlLimitArgs)
+		} else {
+			query = query.Where(s.sqlLimit)
+		}
 	}
 
 	//date between
