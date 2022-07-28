@@ -28,7 +28,7 @@ type search struct {
 
 	// sql 限制
 	sqlLimit     string
-	sqlLimitArgs interface{}
+	sqlLimitArgs []interface{}
 
 	searchParams struct {
 		Key      string `json:"key" form:"key"` //开启模糊搜索 只要有这个字段就行
@@ -218,7 +218,7 @@ func (s *search) getData() *search {
 	//limit
 	if s.sqlLimit != "" {
 		if s.sqlLimitArgs != nil {
-			query = query.Where(s.sqlLimit, s.sqlLimitArgs)
+			query = query.Where(s.sqlLimit, s.sqlLimitArgs...)
 		} else {
 			query = query.Where(s.sqlLimit)
 		}
