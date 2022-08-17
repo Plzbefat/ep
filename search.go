@@ -23,6 +23,10 @@ type search struct {
 	Out interface{}
 	//总行数
 	total int64
+	//精准搜索
+	precise bool
+	//是否不统计项目
+	notCountTotal bool
 
 	error error
 
@@ -31,8 +35,8 @@ type search struct {
 	sqlLimitArgs []interface{}
 
 	searchParams struct {
-		Key      string `json:"key" form:"key"` //开启模糊搜索 只要有这个字段就行
-		Precise  bool   `json:"precise" form:"precise"`
+		Key      string `json:"key" form:"key"`         //开启模糊搜索 只要有这个字段就行
+		Precise  bool   `json:"precise" form:"precise"` //是否为精准搜索
 		Current  int    `json:"current" form:"current"`
 		PageSize int    `json:"pageSize" form:"pageSize"`
 		Order    string `json:"order" form:"order"`
@@ -56,6 +60,18 @@ func (s *search) Table(tableName string) *search {
 	s.table = tableName
 	return s
 }
+
+func (s *search) Precise(precise bool) *search {
+	s.precise = precise
+	return s
+}
+
+//不统计总数
+func (s *search) NotCountTotal(notCountTotal bool) *search {
+	s.notCountTotal = notCountTotal
+	return s
+}
+
 func (s *search) Model(model interface{}) *search {
 	s.model = model
 	return s
@@ -144,8 +160,8 @@ func (s *search) getData() *search {
 			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
 				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
-				//字符串 手动控制 精准搜索
-				if s.searchParams.Precise {
+				//字符串 主动/手动控制 精准搜索
+				if s.precise || s.searchParams.Precise {
 					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 				} else {
 					sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
@@ -230,7 +246,9 @@ func (s *search) getData() *search {
 	}
 
 	//统计查询总量
-	query.Count(&s.total)
+	if !s.notCountTotal {
+		query.Count(&s.total)
+	}
 
 	//分页排序参数
 	offset, limit, order := s.searchParams.Offset, s.searchParams.PageSize, s.searchParams.Order
@@ -248,6 +266,10 @@ func (s *search) Resp() {
 	if s.error != nil {
 		RF(s.c, s.error.Error())
 	} else {
-		RT(s.c, "", gin.H{"data": s.Out, "total": s.total})
+		if !s.notCountTotal {
+			RT(s.c, "", gin.H{"data": s.Out, "total": s.total})
+		} else {
+			RT(s.c, "", gin.H{"data": s.Out})
+		}
 	}
 }
