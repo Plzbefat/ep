@@ -61,14 +61,15 @@ func (s *search) Table(tableName string) *search {
 	return s
 }
 
-func (s *search) Precise(precise bool) *search {
-	s.precise = precise
+//精准搜索
+func (s *search) Precise() *search {
+	s.precise = true
 	return s
 }
 
 //不统计总数
-func (s *search) NotCountTotal(notCountTotal bool) *search {
-	s.notCountTotal = notCountTotal
+func (s *search) NoCountTotal() *search {
+	s.notCountTotal = false
 	return s
 }
 
