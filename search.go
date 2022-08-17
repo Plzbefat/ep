@@ -69,7 +69,7 @@ func (s *search) Precise() *search {
 
 //不统计总数
 func (s *search) NoCountTotal() *search {
-	s.notCountTotal = false
+	s.notCountTotal = true
 	return s
 }
 
