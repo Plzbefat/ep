@@ -216,7 +216,7 @@ func (s *search) getData() *search {
 				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
 				//字符串 手动控制 精准搜索
-				if s.searchParams.Precise {
+				if s.precise || s.searchParams.Precise {
 					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 				} else {
 					sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
@@ -225,7 +225,7 @@ func (s *search) getData() *search {
 		}
 
 		//精准搜索 但是 sql 为空 那就不反馈数据
-		if s.searchParams.Precise && sqlWhere == "" {
+		if (s.precise || s.searchParams.Precise) && sqlWhere == "" {
 			return s
 		}
 	}
