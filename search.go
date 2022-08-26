@@ -31,7 +31,7 @@ type search struct {
 	error error
 
 	// sql 限制
-	sqlLimit     string
+	sqlWhere     string
 	sqlLimitArgs []interface{}
 
 	searchParams struct {
@@ -78,10 +78,10 @@ func (s *search) Model(model interface{}) *search {
 	return s
 }
 
-func (s *search) Limit(limit string, sqlLimitArgs ...interface{}) *search {
-	s.sqlLimit = limit
-	if len(sqlLimitArgs) > 0 {
-		s.sqlLimitArgs = sqlLimitArgs
+func (s *search) Where(where string, whereArgs ...interface{}) *search {
+	s.sqlWhere = where
+	if len(whereArgs) > 0 {
+		s.sqlLimitArgs = whereArgs
 	}
 	return s
 }
@@ -233,11 +233,11 @@ func (s *search) getData() *search {
 	query = query.Where(sqlWhere)
 
 	//limit
-	if s.sqlLimit != "" {
+	if s.sqlWhere != "" {
 		if s.sqlLimitArgs != nil {
-			query = query.Where(s.sqlLimit, s.sqlLimitArgs...)
+			query = query.Where(s.sqlWhere, s.sqlLimitArgs...)
 		} else {
-			query = query.Where(s.sqlLimit)
+			query = query.Where(s.sqlWhere)
 		}
 	}
 
