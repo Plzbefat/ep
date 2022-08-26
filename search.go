@@ -20,9 +20,9 @@ type search struct {
 	//表名
 	table string
 	//反馈数据
-	Out interface{}
+	Data interface{} `json:"data"`
 	//总行数
-	Total int64
+	Total int64 `json:"total"`
 	//精准搜索
 	precise bool
 	//是否不统计项目
@@ -253,12 +253,12 @@ func (s *search) getData() *search {
 
 	//分页排序参数
 	offset, limit, order := s.searchParams.Offset, s.searchParams.PageSize, s.searchParams.Order
-	s.error = query.Offset(offset).Limit(limit).Order(order).Scan(&s.Out).Error
+	s.error = query.Offset(offset).Limit(limit).Order(order).Scan(&s.Data).Error
 	return s
 }
 
 func (s *search) Scan(out interface{}) *search {
-	s.Out = out
+	s.Data = out
 	return s.getSearchParam().getData()
 }
 
@@ -268,9 +268,9 @@ func (s *search) Resp() {
 		RF(s.c, s.error.Error())
 	} else {
 		if !s.notCountTotal {
-			RT(s.c, "", gin.H{"data": s.Out, "total": s.Total})
+			RT(s.c, "", s)
 		} else {
-			RT(s.c, "", gin.H{"data": s.Out})
+			RT(s.c, "", gin.H{"data": s.Data})
 		}
 	}
 }
