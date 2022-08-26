@@ -22,7 +22,7 @@ type search struct {
 	//反馈数据
 	Out interface{}
 	//总行数
-	total int64
+	Total int64
 	//精准搜索
 	precise bool
 	//是否不统计项目
@@ -248,7 +248,7 @@ func (s *search) getData() *search {
 
 	//统计查询总量
 	if !s.notCountTotal {
-		query.Count(&s.total)
+		query.Count(&s.Total)
 	}
 
 	//分页排序参数
@@ -268,7 +268,7 @@ func (s *search) Resp() {
 		RF(s.c, s.error.Error())
 	} else {
 		if !s.notCountTotal {
-			RT(s.c, "", gin.H{"data": s.Out, "total": s.total})
+			RT(s.c, "", gin.H{"data": s.Out, "total": s.Total})
 		} else {
 			RT(s.c, "", gin.H{"data": s.Out})
 		}
