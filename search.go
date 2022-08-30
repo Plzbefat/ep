@@ -46,7 +46,7 @@ type search struct {
 	}
 }
 
-//Search 新的分页搜索
+// Search 新的分页搜索
 func Search(c *gin.Context) *search {
 	return &search{c: c}
 }
@@ -61,13 +61,13 @@ func (s *search) Table(tableName string) *search {
 	return s
 }
 
-//精准搜索
+// 精准搜索
 func (s *search) Precise() *search {
 	s.precise = true
 	return s
 }
 
-//不统计总数
+// 不统计总数
 func (s *search) NoCountTotal() *search {
 	s.notCountTotal = true
 	return s
@@ -86,7 +86,7 @@ func (s *search) Where(where string, whereArgs ...interface{}) *search {
 	return s
 }
 
-//获取 分页排序日期 基础字段信息
+// 获取 分页排序日期 基础字段信息
 func (s *search) getSearchParam() *search {
 	if s.db == nil {
 		s.error = errors.New("database is empty")
@@ -262,13 +262,13 @@ func (s *search) Scan(out interface{}) *search {
 	return s.getSearchParam().getData()
 }
 
-//Resp 反馈信息
+// Resp 反馈信息
 func (s *search) Resp() {
 	if s.error != nil {
 		RF(s.c, s.error.Error())
 	} else {
 		if !s.notCountTotal {
-			RT(s.c, "", s)
+			RT(s.c, "", gin.H{"data": s.Data, "total": s.Total})
 		} else {
 			RT(s.c, "", gin.H{"data": s.Data})
 		}
