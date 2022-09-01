@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type search struct {
+type SearchStruct struct {
 	// db表
 	db *gorm.DB
 	// context
@@ -49,43 +49,43 @@ type search struct {
 }
 
 // Search 新的分页搜索
-func Search(c *gin.Context) *search {
-	return &search{c: c}
+func Search(c *gin.Context) *SearchStruct {
+	return &SearchStruct{c: c}
 }
 
-func (s *search) DB(db *gorm.DB) *search {
+func (s *SearchStruct) DB(db *gorm.DB) *SearchStruct {
 	s.db = db
 	return s
 }
 
-func (s *search) Table(tableName string) *search {
+func (s *SearchStruct) Table(tableName string) *SearchStruct {
 	s.table = tableName
 	return s
 }
 
-func (s *search) Select(_select string) *search {
+func (s *SearchStruct) Select(_select string) *SearchStruct {
 	s._select = _select
 	return s
 }
 
 // 精准搜索
-func (s *search) Precise() *search {
+func (s *SearchStruct) Precise() *SearchStruct {
 	s.precise = true
 	return s
 }
 
 // 不统计总数
-func (s *search) NoCountTotal() *search {
+func (s *SearchStruct) NoCountTotal() *SearchStruct {
 	s.notCountTotal = true
 	return s
 }
 
-func (s *search) Model(model interface{}) *search {
+func (s *SearchStruct) Model(model interface{}) *SearchStruct {
 	s.model = model
 	return s
 }
 
-func (s *search) Where(where string, whereArgs ...interface{}) *search {
+func (s *SearchStruct) Where(where string, whereArgs ...interface{}) *SearchStruct {
 	s.sqlWhere = where
 	if len(whereArgs) > 0 {
 		s.sqlLimitArgs = whereArgs
@@ -94,7 +94,7 @@ func (s *search) Where(where string, whereArgs ...interface{}) *search {
 }
 
 // 获取 分页排序日期 基础字段信息
-func (s *search) getSearchParam() *search {
+func (s *SearchStruct) getSearchParam() *SearchStruct {
 	if s.db == nil {
 		s.error = errors.New("database is empty")
 		return s
@@ -120,7 +120,7 @@ func (s *search) getSearchParam() *search {
 	return s
 }
 
-func (s *search) getData() *search {
+func (s *SearchStruct) getData() *SearchStruct {
 	if s.error != nil {
 		return s
 	}
@@ -269,13 +269,13 @@ func (s *search) getData() *search {
 	return s
 }
 
-func (s *search) Scan(out interface{}) *search {
+func (s *SearchStruct) Scan(out interface{}) *SearchStruct {
 	s.Data = out
 	return s.getSearchParam().getData()
 }
 
 // Resp 反馈信息
-func (s *search) Resp() {
+func (s *SearchStruct) Resp() {
 	if s.error != nil {
 		RF(s.c, s.error.Error())
 	} else {
