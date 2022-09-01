@@ -27,6 +27,8 @@ type search struct {
 	precise bool
 	//是否不统计项目
 	notCountTotal bool
+	//
+	_select string
 
 	error error
 
@@ -58,6 +60,11 @@ func (s *search) DB(db *gorm.DB) *search {
 
 func (s *search) Table(tableName string) *search {
 	s.table = tableName
+	return s
+}
+
+func (s *search) Select(_select string) *search {
+	s._select = _select
 	return s
 }
 
@@ -119,10 +126,15 @@ func (s *search) getData() *search {
 	}
 
 	var query *gorm.DB
+
+	if s._select == "" {
+		s._select = "*"
+	}
+
 	if s.table != "" {
-		query = s.db.Table(s.table)
+		query = s.db.Table(s.table).Select(s._select)
 	} else {
-		query = s.db.Model(s.model)
+		query = s.db.Model(s.model).Select(s._select)
 	}
 
 	sqlWhere := ""
