@@ -42,8 +42,7 @@ type SearchStruct struct {
 		Current  int    `json:"current" form:"current"`
 		PageSize int    `json:"pageSize" form:"pageSize"`
 		Order    string `json:"order" form:"order"`
-		Start    string `json:"start" form:"start"`
-		Stop     string `json:"stop" form:"stop"`
+		Between  string `json:"between" form:"between"`
 		Offset   int    `json:"-" form:"-"`
 	}
 }
@@ -253,9 +252,9 @@ func (s *SearchStruct) getData() *SearchStruct {
 		}
 	}
 
-	//date between
-	if s.searchParams.Start != "" && s.searchParams.Stop != "" {
-		query = query.Where(fmt.Sprintf(" created_at between '%s 00:00:00' and '%s 23:59:59' ", s.searchParams.Start, s.searchParams.Stop))
+	//between
+	if s.searchParams.Between != "" {
+		query = query.Where(fmt.Sprintf(" %s ", s.searchParams.Between))
 	}
 
 	//统计查询总量
