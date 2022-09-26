@@ -144,7 +144,7 @@ func (s *SearchStruct) getData() *SearchStruct {
 		searchModelRef := reflect.ValueOf(s.model).Elem()
 		for i := 0; i < searchModelRef.NumField(); i++ {
 			var value string
-			var orOrAnd string
+			var otherKey bool
 
 			fieldType := searchModelRef.Field(i).Type().String()
 
@@ -154,9 +154,8 @@ func (s *SearchStruct) getData() *SearchStruct {
 				value = searchModelRef.Field(i).String()
 				if value == "" {
 					value = s.searchParams.Key
-					orOrAnd = " or "
 				} else {
-					orOrAnd = " and "
+					otherKey = true
 				}
 			default:
 				continue
@@ -172,7 +171,11 @@ func (s *SearchStruct) getData() *SearchStruct {
 			}
 
 			if sqlWhere != "" {
-				sqlWhere += orOrAnd
+				if otherKey {
+					sqlWhere += " and "
+				} else {
+					sqlWhere += " or "
+				}
 			}
 
 			//between
@@ -187,7 +190,11 @@ func (s *SearchStruct) getData() *SearchStruct {
 					if s.precise || s.searchParams.Precise {
 						sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 					} else {
-						sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
+						if otherKey {
+							sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value) //除了key以外的值，精准搜索
+						} else {
+							sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
+						}
 					}
 				}
 			}
