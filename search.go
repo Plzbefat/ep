@@ -143,7 +143,6 @@ func (s *SearchStruct) getData() *SearchStruct {
 		//模糊搜索字段
 		searchModelRef := reflect.ValueOf(s.model).Elem()
 
-		sqlWhere = "("
 		for i := 0; i < searchModelRef.NumField(); i++ {
 			var value string
 
@@ -166,7 +165,7 @@ func (s *SearchStruct) getData() *SearchStruct {
 				continue
 			}
 
-			if sqlWhere != "(" {
+			if sqlWhere != "" {
 				sqlWhere += " or "
 			}
 
@@ -182,8 +181,9 @@ func (s *SearchStruct) getData() *SearchStruct {
 				}
 			}
 		}
-		sqlWhere += ")"
+		query = query.Where(sqlWhere)
 
+		sqlWhere = ""
 		for i := 0; i < searchModelRef.NumField(); i++ {
 			var value string
 
@@ -206,7 +206,9 @@ func (s *SearchStruct) getData() *SearchStruct {
 				continue
 			}
 
-			sqlWhere += " and "
+			if sqlWhere != "" {
+				sqlWhere += " and "
+			}
 
 			//数值类的精准搜索
 			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
