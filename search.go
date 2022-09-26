@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -41,6 +40,7 @@ type SearchStruct struct {
 		Key      string `json:"key" form:"key"`         //开启模糊搜索 只要有这个字段就行
 		Precise  bool   `json:"precise" form:"precise"` //是否为精准搜索
 		Current  int    `json:"current" form:"current"`
+		Between  string `json:"between" form:"between"`
 		PageSize int    `json:"pageSize" form:"pageSize"`
 		Order    string `json:"order" form:"order"`
 		Offset   int    `json:"-" form:"-"`
@@ -170,20 +170,15 @@ func (s *SearchStruct) getData() *SearchStruct {
 				sqlWhere += " or "
 			}
 
-			//between
-			if strings.Contains(value, "between") {
-				sqlWhere += fmt.Sprintf(" %s %s", key, value)
+			//数值类的精准搜索
+			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
+				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
-				//数值类的精准搜索
-				if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
-					sqlWhere += fmt.Sprintf(" %s = %s", key, value)
+				//字符串 主动/手动控制 精准搜索
+				if s.precise || s.searchParams.Precise {
+					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 				} else {
-					//字符串 主动/手动控制 精准搜索
-					if s.precise || s.searchParams.Precise {
-						sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
-					} else {
-						sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
-					}
+					sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
 				}
 			}
 		}
@@ -213,16 +208,11 @@ func (s *SearchStruct) getData() *SearchStruct {
 
 			sqlWhere += " and "
 
-			//between
-			if strings.Contains(value, "between") {
-				sqlWhere += fmt.Sprintf(" %s %s", key, value)
+			//数值类的精准搜索
+			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
+				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
-				//数值类的精准搜索
-				if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
-					sqlWhere += fmt.Sprintf(" %s = %s", key, value)
-				} else {
-					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
-				}
+				sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 			}
 		}
 	} else {
@@ -267,20 +257,15 @@ func (s *SearchStruct) getData() *SearchStruct {
 				sqlWhere += " and "
 			}
 
-			//between
-			if strings.Contains(value, "between") {
-				sqlWhere += fmt.Sprintf(" %s %s", key, value)
+			//数值类的精准搜索
+			if fieldType == "int" || fieldType == "int64" || fieldType == "float64" || fieldType == "bool" {
+				sqlWhere += fmt.Sprintf(" %s = %s", key, value)
 			} else {
-				//数值类的精准搜索
-				if fieldType == "int" || fieldType == "int64" || fieldType == "float64" || fieldType == "bool" {
-					sqlWhere += fmt.Sprintf(" %s = %s", key, value)
+				//字符串 手动控制 精准搜索
+				if s.precise || s.searchParams.Precise {
+					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 				} else {
-					//字符串 手动控制 精准搜索
-					if s.precise || s.searchParams.Precise {
-						sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
-					} else {
-						sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
-					}
+					sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
 				}
 			}
 		}
@@ -300,6 +285,11 @@ func (s *SearchStruct) getData() *SearchStruct {
 		} else {
 			query = query.Where(s.sqlWhere)
 		}
+	}
+
+	//between
+	if s.searchParams.Between != "" {
+		query = query.Where(fmt.Sprintf(" %s ", s.searchParams.Between))
 	}
 
 	//统计查询总量
