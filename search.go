@@ -142,21 +142,17 @@ func (s *SearchStruct) getData() *SearchStruct {
 	if s.searchParams.Key != "" {
 		//模糊搜索字段
 		searchModelRef := reflect.ValueOf(s.model).Elem()
+
+		sqlWhere = "("
 		for i := 0; i < searchModelRef.NumField(); i++ {
 			var value string
-			var otherKey bool
 
 			fieldType := searchModelRef.Field(i).Type().String()
 
 			//只能是字符串类的做模糊搜索
 			switch fieldType {
 			case "string":
-				value = searchModelRef.Field(i).String()
-				if value == "" {
-					value = s.searchParams.Key
-				} else {
-					otherKey = true
-				}
+				value = s.searchParams.Key
 			default:
 				continue
 			}
@@ -170,12 +166,8 @@ func (s *SearchStruct) getData() *SearchStruct {
 				continue
 			}
 
-			if sqlWhere != "" {
-				if otherKey {
-					sqlWhere += " and "
-				} else {
-					sqlWhere += " or "
-				}
+			if sqlWhere != "(" {
+				sqlWhere += " or "
 			}
 
 			//between
@@ -190,12 +182,46 @@ func (s *SearchStruct) getData() *SearchStruct {
 					if s.precise || s.searchParams.Precise {
 						sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 					} else {
-						if otherKey {
-							sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value) //除了key以外的值，精准搜索
-						} else {
-							sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
-						}
+						sqlWhere += fmt.Sprintf(" %s like '%%%s%%' ", key, value)
 					}
+				}
+			}
+		}
+		sqlWhere += ")"
+
+		for i := 0; i < searchModelRef.NumField(); i++ {
+			var value string
+
+			fieldType := searchModelRef.Field(i).Type().String()
+
+			//只能是字符串类的做模糊搜索
+			switch fieldType {
+			case "string":
+				value = searchModelRef.Field(i).String()
+			default:
+				continue
+			}
+
+			if value == "" {
+				continue
+			}
+
+			key := searchModelRef.Type().Field(i).Tag.Get("form")
+			if key == "" {
+				continue
+			}
+
+			sqlWhere += " and "
+
+			//between
+			if strings.Contains(value, "between") {
+				sqlWhere += fmt.Sprintf(" %s %s", key, value)
+			} else {
+				//数值类的精准搜索
+				if fieldType == "int" || fieldType == "int64" || fieldType == "float64" {
+					sqlWhere += fmt.Sprintf(" %s = %s", key, value)
+				} else {
+					sqlWhere += fmt.Sprintf(" %s = '%s' ", key, value)
 				}
 			}
 		}
