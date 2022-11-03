@@ -1,4 +1,4 @@
-//用于服务器本地开发时数据库代理
+// 用于服务器本地开发时数据库代理
 package ep
 
 import (
@@ -24,7 +24,7 @@ type Config struct {
 	isDebug             bool
 }
 
-//设置代理配置
+// 设置代理配置
 func NewProxy(remoteServerAddress, localKeyFilePath string, isDebug bool) *Config {
 	return &Config{
 		remoteServerAddress: remoteServerAddress,
@@ -33,8 +33,8 @@ func NewProxy(remoteServerAddress, localKeyFilePath string, isDebug bool) *Confi
 	}
 }
 
-//生成ssh远程代理
-func (c *Config) getSshProxyClient() (*ssh.Client, error) {
+// 生成ssh远程代理
+func (c *Config) GetSshProxyClient() (*ssh.Client, error) {
 	if c.remoteServerAddress == "" {
 		return nil, errors.New("remoteServerAddress is empty")
 	}
@@ -60,7 +60,7 @@ func (c *Config) getSshProxyClient() (*ssh.Client, error) {
 	})
 }
 
-//debug?代理:本地 redis
+// debug?代理:本地 redis
 func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, error) {
 	if c.isDebug {
 		return c.getProxyRedisClient(link, password, db)
@@ -69,7 +69,7 @@ func (c *Config) GetRedisClient(link, password string, db int) (*redis.Client, e
 	}
 }
 
-//debug?代理:本地 mysql
+// debug?代理:本地 mysql
 func (c *Config) GetMysqlClient(link, password, db string) (*gorm.DB, error) {
 	if c.isDebug {
 		return c.getProxyMysqlClient(link, password, db)
@@ -78,9 +78,9 @@ func (c *Config) GetMysqlClient(link, password, db string) (*gorm.DB, error) {
 	}
 }
 
-//通过代理连接到redis
+// 通过代理连接到redis
 func (c *Config) getProxyRedisClient(link, password string, db int) (*redis.Client, error) {
-	sshProxyConn, err := c.getSshProxyClient()
+	sshProxyConn, err := c.GetSshProxyClient()
 	if err != nil {
 		return nil, err
 	}
@@ -94,9 +94,9 @@ func (c *Config) getProxyRedisClient(link, password string, db int) (*redis.Clie
 	}), nil
 }
 
-//通过代理连接到mysql
+// 通过代理连接到mysql
 func (c *Config) getProxyMysqlClient(link, password, db string) (*gorm.DB, error) {
-	sshProxyConn, err := c.getSshProxyClient()
+	sshProxyConn, err := c.GetSshProxyClient()
 	if err != nil {
 		return nil, err
 	}
@@ -112,12 +112,12 @@ func (c *Config) getProxyMysqlClient(link, password, db string) (*gorm.DB, error
 	return gorm.Open(mysql.New(mysql.Config{Conn: mysqlProxyConn}), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}, Logger: logger.Default.LogMode(logger.Info)})
 }
 
-//直接连接到redis
+// 直接连接到redis
 func getRedisClient(link, password string, db int) *redis.Client {
 	return redis.NewClient(&redis.Options{Addr: link, Password: password, DB: db})
 }
 
-//直接连接到mysql
+// 直接连接到mysql
 func getMysqlClient(link, password, db string) *gorm.DB {
 	mysqlClient, err := gorm.Open(mysql.Open(fmt.Sprintf("root:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", password, link, db)), &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}})
 	if err != nil {
